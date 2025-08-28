@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mensuration Calculator</title>
+  <style>
+    :root{
+      --bg:#0f172a;        /* slate-900 */
+      --panel:#111827;     /* gray-900 */
+      --muted:#94a3b8;     /* slate-400 */
+      --text:#e5e7eb;      /* gray-200 */
+      --accent:#22d3ee;    /* cyan-400 */
+      --accent-2:#a78bfa;  /* violet-400 */
+      --danger:#ef4444;
+      --ok:#10b981;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background:linear-gradient(120deg,#0b1021,#0f172a 40%,#0b1021); color:var(--text);
+      min-height:100dvh; display:flex; flex-direction:column;
+    }
+    header{
+      padding:20px 16px; border-bottom:1px solid #1f2937; background:transparent; position:sticky; top:0; backdrop-filter:saturate(1.2) blur(6px);
+    }
+    .container{width:min(1100px,92vw); margin-inline:auto}
+    h1{font-size:clamp(22px,3.4vw,34px); margin:0 0 4px; letter-spacing:0.3px}
+    .sub{color:var(--muted); font-size:14px}
+
+    .app{display:grid; grid-template-columns:1.1fr 1fr; gap:18px; padding:20px 16px 40px}
+    @media (max-width: 980px){ .app{ grid-template-columns:1fr; } }
+
+    .card{background:linear-gradient(180deg,#0b132a, #0e162f); border:1px solid #172036; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,.35);}
+    .card .hd{padding:16px 18px; border-bottom:1px solid #1b2540; display:flex; align-items:center; gap:14px}
+    .pill{padding:6px 10px; border-radius:999px; background:#0c2530; color:#7dd3fc; font-size:12px; border:1px solid #123542}
+    .content{padding:18px}
+
+    label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    input, select{ width:100%; padding:12px 12px; border-radius:12px; border:1px solid #1f2a44; background:#0a1022; color:var(--text); outline:none; transition:150ms border;
+    }
+    input:focus, select:focus{ border-color: var(--accent); box-shadow:0 0 0 3px #22d3ee22 }
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px}
+    .mt{margin-top:14px}
+
+    .shape-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
+    .shape-btn{ padding:12px; border-radius:14px; border:1px solid #1b2540; background:#0c1328; color:#cbd5e1; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .shape-btn.active{ outline:2px solid #22d3ee88; border-color:#1e3a8a; background:linear-gradient(180deg,#0e1a36,#0b1530); color:#e5e7eb }
+    .shape-btn small{ color:var(--muted); }
+
+    .results{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px }
+    .stat{ padding:14px; border-radius:14px; border:1px solid #1f2a44; background:#0a1022 }
+    .stat h4{ margin:0 0 6px; font-size:14px; color:#c7d2fe }
+    .stat .val{ font-size:20px; font-weight:700 }
+
+    .footer{ color:var(--muted); font-size:12px; padding:8px 16px 24px; text-align:center }
+    .inline{display:flex; gap:10px; align-items:center}
+    .helper{ font-size:12px; color:#94a3b8; margin-top:8px }
+    .err{ color:var(--danger); font-size:12px; margin-top:6px }
+    .ok{ color:var(--ok); font-size:12px; margin-top:6px }
+    .muted{ color:var(--muted) }
+    .copy{ cursor:pointer; border:none; background:#0b1a33; color:#cbd5e1; padding:6px 10px; border-radius:10px; border:1px solid #1b2540 }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Mensuration Calculator</h1>
+      <div class="sub">Enter dimensions. Get every related formula result instantly — area, perimeter, surface area, volume, and more.</div>
+    </div>
+  </header>
+
+  <main class="container app">
+    <!-- LEFT: Controls -->
+    <section class="card">
+      <div class="hd">
+        <span class="pill">1</span>
+        <div>
+          <div style="font-weight:700">Choose Shape</div>
+          <div class="muted" style="font-size:12px">2D & 3D shapes supported</div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="shape-grid" id="shapeGrid"></div>
+
+        <div class="row mt">
+          <div>
+            <label for="unit">Units</label>
+            <select id="unit">
+              <option value="cm">cm</option>
+              <option value="m">m</option>
+              <option value="mm">mm</option>
+              <option value="in">in</option>
+              <option value="ft">ft</option>
+            </select>
+          </div>
+          <div>
+            <label for="precision">Precision (decimal places)</label>
+            <input id="precision" type="number" min="0" max="8" value="3" />
+          </div>
+        </div>
+
+        <div class="mt">
+          <div class="hd" style="border:none; padding:0 0 8px; margin-top:8px">
+            <span class="pill">2</span>
+            <div>
+              <div style="font-weight:700">Enter Dimensions</div>
+              <div class="muted" style="font-size:12px">Only the required fields for the selected shape</div>
+            </div>
+          </div>
+          <div id="inputs"></div>
+          <div id="msg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Results -->
+    <section class="card">
+      <div class="hd">
+        <span class="pill">3</span>
+        <div>
+          <div style="font-weight:700">Results</div>
+          <div class="muted" style="font-size:12px">Auto-updates as you type</div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="results" id="results"></div>
+        <div class="helper">Tip: Click a value to copy. Change units/precision on the left.</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">Made for quick mensuration calculations • No data leaves your device.</div>
+
+  <script>
+    // ---- Utility helpers ----
+    const byId = (id) => document.getElementById(id);
+    const shapeGrid = byId('shapeGrid');
+    const inputsEl = byId('inputs');
+    const resultsEl = byId('results');
+    const unitEl = byId('unit');
+    const precisionEl = byId('precision');
+    const msgEl = byId('msg');
+
+    const fmt = (x, p) => {
+      if (Number.isNaN(x) || !Number.isFinite(x)) return '—';
+      return Number(x).toFixed(p);
+    };
+    const toNum = (v) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    function copy(text){
+      navigator.clipboard?.writeText(text).then(()=>{
+        msgEl.innerHTML = `<div class="ok">Copied: <code>${text}</code></div>`;
+        setTimeout(()=> msgEl.innerHTML = '', 1500);
+      }).catch(()=>{});
+    }
+
+    // ---- Shapes definition ----
+    // Each shape: { id, label, kind:'2D'|'3D', fields:[{name,label,placeholder}], compute: (vals)=>({ key: value, ... }) }
+
+    const PI = Math.PI;
+
+    const SHAPES = [
+      // 2D
+      { id:'square', label:'Square', kind:'2D',
+        fields:[{name:'a',label:'Side (a)'}],
+        compute: ({a})=>{
+          const P = 4*a; const A = a*a; const d = Math.sqrt(2)*a;
+          return { 'Perimeter':P, 'Area':A, 'Diagonal':d };
+        }
+      },
+      { id:'rectangle', label:'Rectangle', kind:'2D',
+        fields:[{name:'l',label:'Length (l)'},{name:'b',label:'Breadth (b)'}],
+        compute: ({l,b})=>{
+          const P = 2*(l+b); const A = l*b; const d = Math.hypot(l,b);
+          return { 'Perimeter':P, 'Area':A, 'Diagonal':d };
+        }
+      },
+      { id:'circle', label:'Circle', kind:'2D',
+        fields:[{name:'r',label:'Radius (r)'}],
+        compute: ({r})=>{
+          const C = 2*PI*r; const A = PI*r*r; const D = 2*r;
+          return { 'Circumference':C, 'Area':A, 'Diameter':D };
+        }
+      },
+      { id:'triangle', label:'Triangle (Heron)', kind:'2D',
+        fields:[{name:'a',label:'Side a'},{name:'b',label:'Side b'},{name:'c',label:'Side c'}],
+        compute: ({a,b,c})=>{
+          const s = (a+b+c)/2; const A = Math.sqrt(Math.max(0,s*(s-a)*(s-b)*(s-c)));
+          const P = a+b+c; return {'Perimeter':P,'Semi-perimeter (s)':s,'Area (Heron)':A};
+        }
+      },
+      { id:'rt_triangle', label:'Right Triangle', kind:'2D',
+        fields:[{name:'base',label:'Base (b)'},{name:'height',label:'Height (h)'}],
+        compute: ({base,height})=>{
+          const A = 0.5*base*height; const hyp = Math.hypot(base,height); const P = base+height+hyp;
+          return { 'Area':A, 'Hypotenuse':hyp, 'Perimeter':P };
+        }
+      },
+      { id:'parallelogram', label:'Parallelogram', kind:'2D',
+        fields:[{name:'base',label:'Base (b)'},{name:'height',label:'Height (h)'},{name:'side',label:'Side (a)'}],
+        compute: ({base,height,side})=>({ 'Area':base*height, 'Perimeter':2*(base+side) })
+      },
+      { id:'trapezium', label:'Trapezium', kind:'2D',
+        fields:[{name:'a',label:'Base a'},{name:'b',label:'Base b'},{name:'h',label:'Height (h)'},{name:'c',label:'Side c'},{name:'d',label:'Side d'}],
+        compute: ({a,b,h,c,d})=>({ 'Area':0.5*(a+b)*h, 'Perimeter':a+b+c+d })
+      },
+      { id:'sector', label:'Sector of Circle', kind:'2D',
+        fields:[{name:'r',label:'Radius (r)'},{name:'theta',label:'Angle (°)'}],
+        compute: ({r,theta})=>{
+          const A = PI*r*r*(theta/360); const L = 2*PI*r*(theta/360);
+          return { 'Area':A, 'Arc length':L };
+        }
+      },
+      { id:'reg_polygon', label:'Regular Polygon', kind:'2D',
+        fields:[{name:'n',label:'Number of sides (n)'},{name:'a',label:'Side length'}],
+        compute: ({n,a})=>{
+          const P = n*a; const A = (n*a*a)/(4*Math.tan(PI/n));
+          return { 'Perimeter':P, 'Area':A };
+        }
+      },
+
+      // 3D
+      { id:'cube', label:'Cube', kind:'3D',
+        fields:[{name:'a',label:'Edge (a)'}],
+        compute: ({a})=>{
+          const TSA = 6*a*a; const LSA = 4*a*a; const V = a**3; const diag = Math.sqrt(3)*a;
+          return { 'Surface area (TSA)':TSA, 'Lateral SA':LSA, 'Volume':V, 'Space diagonal':diag };
+        }
+      },
+      { id:'cuboid', label:'Cuboid', kind:'3D',
+        fields:[{name:'l',label:'Length (l)'},{name:'b',label:'Breadth (b)'},{name:'h',label:'Height (h)'}],
+        compute: ({l,b,h})=>{
+          const TSA = 2*(l*b + b*h + l*h); const LSA = 2*h*(l+b); const V = l*b*h; const d = Math.hypot(l,Math.hypot(b,h));
+          return { 'Surface area (TSA)':TSA, 'Lateral SA':LSA, 'Volume':V, 'Space diagonal':d };
+        }
+      },
+      { id:'cylinder', label:'Right Cylinder', kind:'3D',
+        fields:[{name:'r',label:'Radius (r)'},{name:'h',label:'Height (h)'}],
+        compute: ({r,h})=>{
+          const CSA = 2*PI*r*h; const TSA = CSA + 2*PI*r*r; const V = PI*r*r*h;
+          return { 'Curved SA (CSA)':CSA, 'Surface area (TSA)':TSA, 'Volume':V };
+        }
+      },
+      { id:'cone', label:'Right Cone', kind:'3D',
+        fields:[{name:'r',label:'Radius (r)'},{name:'h',label:'Height (h)'}],
+        compute: ({r,h})=>{
+          const l = Math.hypot(r,h); const CSA = PI*r*l; const TSA = CSA + PI*r*r; const V = (PI*r*r*h)/3;
+          return { 'Slant height (l)':l, 'Curved SA (CSA)':CSA, 'Surface area (TSA)':TSA, 'Volume':V };
+        }
+      },
+      { id:'sphere', label:'Sphere', kind:'3D',
+        fields:[{name:'r',label:'Radius (r)'}],
+        compute: ({r})=>({ 'Surface area':4*PI*r*r, 'Volume':(4/3)*PI*r**3 })
+      },
+      { id:'hemisphere', label:'Hemisphere', kind:'3D',
+        fields:[{name:'r',label:'Radius (r)'}],
+        compute: ({r})=>({ 'Curved SA (CSA)':2*PI*r*r, 'Surface area (TSA)':3*PI*r*r, 'Volume':(2/3)*PI*r**3 })
+      },
+      { id:'frustum', label:'Frustum of Cone', kind:'3D',
+        fields:[{name:'R',label:'Radius (R) – bigger'},{name:'r',label:'Radius (r) – smaller'},{name:'h',label:'Height (h)'}],
+        compute: ({R,r,h})=>{
+          const l = Math.hypot(R-r,h); const CSA = PI*(R+r)*l; const TSA = CSA + PI*(R*R + r*r); const V = (PI*h*(R*R + R*r + r*r))/3;
+          return { 'Slant height (l)':l, 'Curved SA (CSA)':CSA, 'Surface area (TSA)':TSA, 'Volume':V };
+        }
+      }
+    ];
+
+    // ---- Build shape buttons ----
+    let current = SHAPES[0].id;
+    function renderShapes(){
+      shapeGrid.innerHTML = SHAPES.map(s=>`
+        <button class="shape-btn ${s.id===current?'active':''}" data-id="${s.id}">
+          <span>${s.label}</span>
+          <small>${s.kind}</small>
+        </button>
+      `).join('');
+      shapeGrid.querySelectorAll('.shape-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{ current = btn.dataset.id; renderShapes(); renderInputs(); computeAndRender(); });
+      });
+    }
+
+    // ---- Inputs rendering ----
+    const values = {};
+    function inputField(name,label){
+      const id = `in_${name}`;
+      const val = values[name] ?? '';
+      return `
+        <div>
+          <label for="${id}">${label}</label>
+          <input id="${id}" type="number" min="0" step="any" placeholder="e.g., 5" value="${val}" />
+        </div>
+      `;
+    }
+    function renderInputs(){
+      const shape = SHAPES.find(s=>s.id===current);
+      const groups = shape.fields.length>=3? 'row-3' : 'row';
+      inputsEl.innerHTML = `<div class="${groups}">` + shape.fields.map(f=>inputField(f.name,f.label)).join('') + `</div>`;
+      shape.fields.forEach(f=>{
+        const el = byId('in_'+f.name);
+        el.addEventListener('input', ()=>{ values[f.name]=el.value; computeAndRender(); });
+      });
+    }
+
+    // ---- Compute and render results ----
+    function computeAndRender(){
+      const p = Math.max(0, Math.min(8, parseInt(precisionEl.value)||3));
+      const u = unitEl.value;
+      const shape = SHAPES.find(s=>s.id===current);
+
+      // build value object
+      const v = {};
+      let missing = false;
+      for(const f of shape.fields){
+        const n = toNum(values[f.name]);
+        if(!Number.isFinite(n) || n<=0){ missing = true; }
+        v[f.name] = n;
+      }
+
+      if(missing){
+        resultsEl.innerHTML = `<div class="helper">Enter all required positive values to see results.</div>`;
+        return;
+      }
+
+      let res = shape.compute(v);
+
+      // Render result cards
+      const unit2 = (shape.kind==='2D')? `${u}²` : `${u}³`;
+      resultsEl.innerHTML = Object.entries(res).map(([k,val])=>{
+        const isLength = /perimeter|diagonal|circumference|slant|arc|hypotenuse|radius|diameter|height|base|side|length|breadth|space|lateral/i.test(k);
+        const isArea = /area|CSA|TSA|surface/i.test(k);
+        const suffix = isArea? unit2 : (isLength? u : `${shape.kind==='2D'?unit2:unit2}`);
+        // Better suffix: for volumes use u^3
+        const isVolume = /volume/i.test(k);
+        const finalUnit = isVolume? `${u}³` : (isArea? `${u}²` : u);
+        const text = `${fmt(val,p)} ${finalUnit}`;
+        return `
+          <div class="stat" tabindex="0" role="button" aria-label="Copy ${k} value" data-copy="${text}">
+            <h4>${k}</h4>
+            <div class="val">${text}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Copy handlers
+      resultsEl.querySelectorAll('.stat').forEach(card=>{
+        card.addEventListener('click', ()=> copy(card.dataset.copy));
+      });
+    }
+
+    // ---- Init ----
+    unitEl.addEventListener('change', computeAndRender);
+    precisionEl.addEventListener('input', computeAndRender);
+
+    renderShapes();
+    renderInputs();
+    computeAndRender();
+  </script>
+</body>
+</html>
